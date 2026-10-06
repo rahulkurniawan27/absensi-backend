@@ -67,8 +67,13 @@ app.post('/api/users', async (req, res) => {
         const [result] = await db.query('INSERT INTO USER (username, password, nama, role) VALUES (?, ?, ?, ?)', [username, password, nama, role || 'user']);
         res.json({ id_user: result.insertId });
     } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    console.error('ERROR POST /api/users:', err);
+    res.status(500).json({
+        error: err.message,
+        code: err.code,
+        sqlMessage: err.sqlMessage
+    });
+}
 });
 
 app.put('/api/users/:id', async (req, res) => {
@@ -146,8 +151,13 @@ app.get('/api/jadwal', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM JADWAL LIMIT 1');
         res.json(rows[0]);
     } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    console.error('ERROR GET /api/jadwal:', err);
+    res.status(500).json({
+        error: err.message,
+        code: err.code,
+        sqlMessage: err.sqlMessage
+    });
+}
 });
 
 app.put('/api/jadwal/:id', async (req, res) => {
