@@ -203,7 +203,7 @@ app.post('/api/absen', async (req, res) => {
         const today = now.toLocaleDateString('en-CA'); 
         const time = now.toTimeString().split(' ')[0]; 
         
-        const [cek] = await db.query('SELECT * FROM ABSENSI WHERE id_user = ? AND tanggal = ?', [id_user, today]);
+        const [cek] = await db.query('SELECT * FROM `absensi` WHERE id_user = ? AND tanggal = ?', [id_user, today]);
 
         if (jenis_absen === 'masuk') {
             if (cek.length > 0) return res.status(400).json({ error: 'Anda sudah absen masuk hari ini.' });
