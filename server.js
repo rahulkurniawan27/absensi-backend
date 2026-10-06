@@ -49,15 +49,22 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/users', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT u.id_user, u.nama, u.username, 
-                   IF(f.id_user IS NOT NULL, 'Sudah', 'Belum') as status_wajah 
-            FROM USER u 
-            LEFT JOIN SAMPLE_FOTO f ON u.id_user = f.id_user 
+            SELECT u.id_user, u.nama, u.username,
+                   IF(f.id_user IS NOT NULL, 'Sudah', 'Belum') as status_wajah
+            FROM USER u
+            LEFT JOIN SAMPLE_FOTO f ON u.id_user = f.id_user
             WHERE u.role = 'user'
         `);
+
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('ERROR GET /api/users:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
@@ -233,8 +240,14 @@ app.get('/api/laporan', async (req, res) => {
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
         res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        catch (err) {
+        console.error('ERROR LAPORAN ABSENSI:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
