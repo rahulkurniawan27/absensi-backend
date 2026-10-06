@@ -22,11 +22,20 @@ const db = mysql.createPool({
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await db.query('SELECT id_user, nama, username, role FROM USER WHERE username = ? AND password = ?', [username, password]);
+        const [rows] = await db.query('SELECT * FROM user WHERE username = ?', [username]);
+        
         if (rows.length === 0) {
             return res.status(401).json({ error: 'Username atau password salah!' });
         }
-        res.json(rows[0]);
+
+        const user = rows[0];
+
+        // Cek langsung password (jika tidak pakai bcrypt)
+        if (password !== user.password) {
+            return res.status(401).json({ error: 'Username atau password salah!' });
+        }
+
+        res.json({ message: 'Login Berhasil', user });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
