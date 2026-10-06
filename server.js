@@ -130,13 +130,13 @@ app.post('/api/register-face', async (req, res) => {
         if (cek.length > 0) {
             // 2. Jika sudah ada, lakukan UPDATE ke kolom path_foto dan face_descriptor
             await db.query(
-                'UPDATE `sample_foto` SET path_foto = ?, face_descriptor = ? WHERE id_user = ?', 
+                'UPDATE sample_foto SET path_foto = ?, face_descriptor = ? WHERE id_user = ?', 
                 [foto_base64, descriptorStr, id_user]
             );
         } else {
             // 3. Jika belum ada, lakukan INSERT data baru
             await db.query(
-                'INSERT INTO `sample_foto` (id_user, path_foto, face_descriptor) VALUES (?, ?, ?)', 
+                'INSERT INTO sample_foto (id_user, path_foto, face_descriptor) VALUES (?, ?, ?)', 
                 [id_user, foto_base64, descriptorStr]
             );
         }
@@ -151,7 +151,7 @@ app.post('/api/register-face', async (req, res) => {
 app.get('/api/face-descriptor/:id_user', async (req, res) => {
     try {
         // PERBAIKAN: Ambil dari kolom face_descriptor
-        const [rows] = await db.query('SELECT face_descriptor FROM `sample_foto` WHERE id_user = ?', [req.params.id_user]);
+        const [rows] = await db.query('SELECT face_descriptor FROM sample_foto WHERE id_user = ?', [req.params.id_user]);
         
         if (rows.length > 0) {
             // Kembalikan dengan format JSON yang diharapkan Frontend
@@ -327,7 +327,7 @@ app.get('/api/laporan', async (req, res) => {
             SELECT a.id_absensi as id, DATE_FORMAT(a.tanggal, '%d %b %Y') as tanggal, 
                    u.nama, a.jam_masuk, a.jam_keluar, a.status, 
                    a.latitude, a.longitude, a.alamat 
-            FROM `absensi` a 
+            FROM absensi a 
             JOIN `user` u ON a.id_user = u.id_user 
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
@@ -347,7 +347,7 @@ app.get('/api/riwayat/:id_user', async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT id_absensi as id, DATE_FORMAT(tanggal, '%d %b %Y') as tanggal, jam_masuk, jam_keluar, status, latitude, longitude 
-            FROM `absensi` WHERE id_user = ? ORDER BY tanggal DESC, jam_masuk DESC
+            FROM absensi WHERE id_user = ? ORDER BY tanggal DESC, jam_masuk DESC
         `, [req.params.id_user]);
         res.json(rows);
     } catch (err) {
@@ -360,7 +360,7 @@ app.put('/api/laporan/:id', async (req, res) => {
     const { jam_masuk, jam_keluar, status } = req.body;
     try {
         await db.query(
-            'UPDATE `absensi` SET jam_masuk=?, jam_keluar=?, status=? WHERE id_absensi=?', 
+            'UPDATE absensi SET jam_masuk=?, jam_keluar=?, status=? WHERE id_absensi=?', 
             [jam_masuk, jam_keluar || null, status, req.params.id]
         );
         res.json({ message: 'Laporan absensi diperbarui' });
@@ -372,7 +372,7 @@ app.put('/api/laporan/:id', async (req, res) => {
 // API Hapus Data Absensi (Admin)
 app.delete('/api/laporan/:id', async (req, res) => {
     try {
-        await db.query('DELETE FROM `absensi` WHERE id_absensi=?', [req.params.id]);
+        await db.query('DELETE FROM absensi WHERE id_absensi=?', [req.params.id]);
         res.json({ message: 'Data absensi dihapus' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -383,7 +383,7 @@ app.delete('/api/laporan/:id', async (req, res) => {
 app.put('/api/laporan/update-alamat/:id', async (req, res) => {
     try {
         await db.query(
-            'UPDATE `absensi` SET alamat = ? WHERE id_absensi = ?', 
+            'UPDATE absensi SET alamat = ? WHERE id_absensi = ?', 
             [req.body.alamat, req.params.id]
         );
         res.json({ message: 'Alamat permanen disimpan di database.' });
