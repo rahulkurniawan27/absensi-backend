@@ -240,7 +240,7 @@ app.get('/api/laporan', async (req, res) => {
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
         res.json(rows);
-        catch (err) {
+        } catch (err) {
         console.error('ERROR LAPORAN ABSENSI:', err);
 
         res.status(500).json({
