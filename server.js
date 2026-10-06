@@ -420,7 +420,6 @@ app.post('/api/absen', async (req, res) => {
         jenis_absen !== 'masuk' &&
         jenis_absen !== 'keluar'
     ) {
-
         return res.status(400).json({
             error: 'Jenis absensi tidak valid.'
         });
@@ -428,11 +427,35 @@ app.post('/api/absen', async (req, res) => {
 
     try {
 
+        // ==============================
+        // WAKTU INDONESIA / WIB
+        // ==============================
+
         const now = new Date();
 
-        const today = now.toLocaleDateString('en-CA');
+        const jakartaParts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23'
+        }).formatToParts(now);
 
-        const time = now.toTimeString().split(' ')[0];
+        const waktu = {};
+
+        jakartaParts.forEach(part => {
+            if (part.type !== 'literal') {
+                waktu[part.type] = part.value;
+            }
+        });
+
+        const today = `${waktu.year}-${waktu.month}-${waktu.day}`;
+        const time = `${waktu.hour}:${waktu.minute}:${waktu.second}`;
+
+        console.log('Waktu absensi WIB:', today, time);
 
 
         // Cek absensi hari ini
