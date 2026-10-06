@@ -26,7 +26,10 @@ const db = mysql.createPool({
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await db.query('SELECT * FROM user WHERE username = ?', [username]);
+        const [rows] = await db.query(
+            'SELECT * FROM `user` WHERE username = ?',
+            [username]
+        );
         
         if (rows.length === 0) {
             return res.status(401).json({ error: 'Username atau password salah!' });
@@ -51,7 +54,7 @@ app.get('/api/users', async (req, res) => {
         const [rows] = await db.query(`
             SELECT u.id_user, u.nama, u.username,
                    IF(f.id_user IS NOT NULL, 'Sudah', 'Belum') as status_wajah
-            FROM USER u
+            FROM `user` u
             LEFT JOIN SAMPLE_FOTO f ON u.id_user = f.id_user
             WHERE u.role = 'user'
         `);
@@ -71,7 +74,7 @@ app.get('/api/users', async (req, res) => {
 app.post('/api/users', async (req, res) => {
     const { username, password, nama, role } = req.body;
     try {
-        const [result] = await db.query('INSERT INTO USER (username, password, nama, role) VALUES (?, ?, ?, ?)', [username, password, nama, role || 'user']);
+        const [result] = await db.query('INSERT INTO `user` (username, password, nama, role) VALUES (?, ?, ?, ?)', [username, password, nama, role || 'user']);
         res.json({ id_user: result.insertId });
     } catch (err) {
     console.error('ERROR POST /api/users:', err);
@@ -87,9 +90,9 @@ app.put('/api/users/:id', async (req, res) => {
     const { username, password, nama } = req.body;
     try {
         if(password) {
-            await db.query('UPDATE USER SET username=?, password=?, nama=? WHERE id_user=?', [username, password, nama, req.params.id]);
+            await db.query('UPDATE `user` SET username=?, password=?, nama=? WHERE id_user=?', [username, password, nama, req.params.id]);
         } else {
-            await db.query('UPDATE USER SET username=?, nama=? WHERE id_user=?', [username, nama, req.params.id]);
+            await db.query('UPDATE `user` SET username=?, nama=? WHERE id_user=?', [username, nama, req.params.id]);
         }
         res.json({ message: 'User diupdate' });
     } catch (err) {
@@ -99,7 +102,7 @@ app.put('/api/users/:id', async (req, res) => {
 
 app.delete('/api/users/:id', async (req, res) => {
     try {
-        await db.query('DELETE FROM USER WHERE id_user=?', [req.params.id]);
+        await db.query('DELETE FROM `user` WHERE id_user=?', [req.params.id]);
         res.json({ message: 'User dihapus' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -236,7 +239,7 @@ app.get('/api/laporan', async (req, res) => {
                    u.nama, a.jam_masuk, a.jam_keluar, a.status, 
                    a.latitude, a.longitude, a.alamat 
             FROM ABSENSI a 
-            JOIN USER u ON a.id_user = u.id_user 
+            JOIN `user` u ON a.id_user = u.id_user 
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
         res.json(rows);
