@@ -324,16 +324,25 @@ app.post('/api/absen', async (req, res) => {
 app.get('/api/laporan', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT a.id_absensi as id, DATE_FORMAT(a.tanggal, '%d %b %Y') as tanggal, 
-                   u.nama, a.jam_masuk, a.jam_keluar, a.status, 
-                   a.latitude, a.longitude, a.alamat 
-            FROM absensi a 
-            JOIN `user` u ON a.id_user = u.id_user 
+            SELECT 
+                a.id_absensi AS id,
+                DATE_FORMAT(a.tanggal, '%d %b %Y') AS tanggal,
+                u.nama,
+                a.jam_masuk,
+                a.jam_keluar,
+                a.status,
+                a.latitude,
+                a.longitude,
+                a.alamat
+            FROM absensi a
+            JOIN user u ON a.id_user = u.id_user
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
+
         res.json(rows);
-        } catch (err) {
-        console.error('ERROR LAPORAN ABSENSI:', err);
+
+    } catch (err) {
+        console.error('ERROR GET /api/laporan:', err);
 
         res.status(500).json({
             error: err.message,
@@ -343,52 +352,132 @@ app.get('/api/laporan', async (req, res) => {
     }
 });
 
+
 app.get('/api/riwayat/:id_user', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT id_absensi as id, DATE_FORMAT(tanggal, '%d %b %Y') as tanggal, jam_masuk, jam_keluar, status, latitude, longitude 
-            FROM absensi WHERE id_user = ? ORDER BY tanggal DESC, jam_masuk DESC
+            SELECT
+                id_absensi AS id,
+                DATE_FORMAT(tanggal, '%d %b %Y') AS tanggal,
+                jam_masuk,
+                jam_keluar,
+                status,
+                latitude,
+                longitude,
+                alamat
+            FROM absensi
+            WHERE id_user = ?
+            ORDER BY tanggal DESC, jam_masuk DESC
         `, [req.params.id_user]);
+
         res.json(rows);
+
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('ERROR GET /api/riwayat:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
-// API Edit Data Absensi (Admin)
+
+// ================= API EDIT DATA ABSENSI =================
+
 app.put('/api/laporan/:id', async (req, res) => {
-    const { jam_masuk, jam_keluar, status } = req.body;
+
+    const {
+        jam_masuk,
+        jam_keluar,
+        status
+    } = req.body;
+
     try {
+
         await db.query(
-            'UPDATE absensi SET jam_masuk=?, jam_keluar=?, status=? WHERE id_absensi=?', 
-            [jam_masuk, jam_keluar || null, status, req.params.id]
+            'UPDATE absensi SET jam_masuk = ?, jam_keluar = ?, status = ? WHERE id_absensi = ?',
+            [
+                jam_masuk,
+                jam_keluar || null,
+                status,
+                req.params.id
+            ]
         );
-        res.json({ message: 'Laporan absensi diperbarui' });
+
+        res.json({
+            message: 'Laporan absensi diperbarui'
+        });
+
     } catch (err) {
-        res.status(500).json({ error: err.message });
+
+        console.error('ERROR PUT /api/laporan:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
-// API Hapus Data Absensi (Admin)
+
+// ================= API HAPUS DATA ABSENSI =================
+
 app.delete('/api/laporan/:id', async (req, res) => {
+
     try {
-        await db.query('DELETE FROM absensi WHERE id_absensi=?', [req.params.id]);
-        res.json({ message: 'Data absensi dihapus' });
+
+        await db.query(
+            'DELETE FROM absensi WHERE id_absensi = ?',
+            [req.params.id]
+        );
+
+        res.json({
+            message: 'Data absensi dihapus'
+        });
+
     } catch (err) {
-        res.status(500).json({ error: err.message });
+
+        console.error('ERROR DELETE /api/laporan:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
-// API Khusus untuk menyimpan otomatis hasil terjemahan GPS ke database
+
+// ================= API UPDATE ALAMAT =================
+
 app.put('/api/laporan/update-alamat/:id', async (req, res) => {
+
     try {
+
         await db.query(
-            'UPDATE absensi SET alamat = ? WHERE id_absensi = ?', 
-            [req.body.alamat, req.params.id]
+            'UPDATE absensi SET alamat = ? WHERE id_absensi = ?',
+            [
+                req.body.alamat,
+                req.params.id
+            ]
         );
-        res.json({ message: 'Alamat permanen disimpan di database.' });
+
+        res.json({
+            message: 'Alamat permanen disimpan di database.'
+        });
+
     } catch (err) {
-        res.status(500).json({ error: err.message });
+
+        console.error('ERROR UPDATE ALAMAT:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
 });
 
