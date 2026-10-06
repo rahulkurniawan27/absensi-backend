@@ -345,7 +345,7 @@ app.get('/api/jadwal', async (req, res) => {
     try {
 
         const [rows] = await db.query(
-            'SELECT * FROM JADWAL LIMIT 1'
+            'SELECT * FROM jadwal LIMIT 1'
         );
 
         res.json(rows[0] || {});
@@ -375,7 +375,7 @@ app.put('/api/jadwal/:id', async (req, res) => {
     try {
 
         await db.query(
-            'UPDATE JADWAL SET hari = ?, masuk = ?, batas = ?, pulang = ? WHERE id = ?',
+            'UPDATE jadwal SET hari = ?, masuk = ?, batas = ?, pulang = ? WHERE id = ?',
             [
                 hari,
                 masuk,
