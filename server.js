@@ -35,17 +35,24 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Username atau password salah!' });
         }
 
-        const user = rows[0];
+        const valid = await bcrypt.compare(password, user.password);
 
-        // Cek langsung password (jika tidak pakai bcrypt)
-        if (password !== user.password) {
-            return res.status(401).json({ error: 'Username atau password salah!' });
+        if (!valid) {
+            return res.status(401).json({
+                error: 'Username atau password salah!'
+            });
         }
 
-        res.json({ message: 'Login Berhasil', user });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const safeUser = {
+            id_user: user.id_user,
+            nama: user.nama,
+            username: user.username,
+            role: user.role
+        };
+
+    res.json({
+    message: 'Login Berhasil',
+    user: safeUser
 });
 
 // ================= API KELOLA USER (ADMIN) =================
