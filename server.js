@@ -53,13 +53,14 @@ app.get('/api/users', async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT u.id_user, u.nama, u.username,
-                   IF(f.id_user IS NOT NULL, 'Sudah', 'Belum') as status_wajah
-            FROM `user` u
-            LEFT JOIN SAMPLE_FOTO f ON u.id_user = f.id_user
+                   IF(f.id_user IS NOT NULL, 'Sudah', 'Belum') AS status_wajah
+            FROM \`user\` u
+            LEFT JOIN \`sample_foto\` f ON u.id_user = f.id_user
             WHERE u.role = 'user'
         `);
 
         res.json(rows);
+
     } catch (err) {
         console.error('ERROR GET /api/users:', err);
 
@@ -71,19 +72,27 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+
 app.post('/api/users', async (req, res) => {
     const { username, password, nama, role } = req.body;
+
     try {
-        const [result] = await db.query('INSERT INTO `user` (username, password, nama, role) VALUES (?, ?, ?, ?)', [username, password, nama, role || 'user']);
+        const [result] = await db.query(
+            'INSERT INTO `user` (username, password, nama, role) VALUES (?, ?, ?, ?)',
+            [username, password, nama, role || 'user']
+        );
+
         res.json({ id_user: result.insertId });
+
     } catch (err) {
-    console.error('ERROR POST /api/users:', err);
-    res.status(500).json({
-        error: err.message,
-        code: err.code,
-        sqlMessage: err.sqlMessage
-    });
-}
+        console.error('ERROR POST /api/users:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
+    }
 });
 
 app.put('/api/users/:id', async (req, res) => {
@@ -116,18 +125,18 @@ app.post('/api/register-face', async (req, res) => {
         const descriptorStr = JSON.stringify(face_descriptor);
         
         // 1. Cek apakah user ini sudah pernah mendaftarkan wajah sebelumnya
-        const [cek] = await db.query('SELECT * FROM SAMPLE_FOTO WHERE id_user = ?', [id_user]);
+        const [cek] = await db.query('SELECT * FROM `sample_foto` WHERE id_user = ?', [id_user]);
         
         if (cek.length > 0) {
             // 2. Jika sudah ada, lakukan UPDATE ke kolom path_foto dan face_descriptor
             await db.query(
-                'UPDATE SAMPLE_FOTO SET path_foto = ?, face_descriptor = ? WHERE id_user = ?', 
+                'UPDATE `sample_foto` SET path_foto = ?, face_descriptor = ? WHERE id_user = ?', 
                 [foto_base64, descriptorStr, id_user]
             );
         } else {
             // 3. Jika belum ada, lakukan INSERT data baru
             await db.query(
-                'INSERT INTO SAMPLE_FOTO (id_user, path_foto, face_descriptor) VALUES (?, ?, ?)', 
+                'INSERT INTO `sample_foto` (id_user, path_foto, face_descriptor) VALUES (?, ?, ?)', 
                 [id_user, foto_base64, descriptorStr]
             );
         }
@@ -142,7 +151,7 @@ app.post('/api/register-face', async (req, res) => {
 app.get('/api/face-descriptor/:id_user', async (req, res) => {
     try {
         // PERBAIKAN: Ambil dari kolom face_descriptor
-        const [rows] = await db.query('SELECT face_descriptor FROM SAMPLE_FOTO WHERE id_user = ?', [req.params.id_user]);
+        const [rows] = await db.query('SELECT face_descriptor FROM `sample_foto` WHERE id_user = ?', [req.params.id_user]);
         
         if (rows.length > 0) {
             // Kembalikan dengan format JSON yang diharapkan Frontend
@@ -208,7 +217,7 @@ app.post('/api/absen', async (req, res) => {
 
             // PERBAIKAN: Masukkan variabel alamat ke database
             await db.query(
-                `INSERT INTO ABSENSI (id_user, tanggal, jam_masuk, status, foto_absensi, confidence, latitude, longitude, lat_lon, alamat) 
+                `INSERT INTO `absensi` (id_user, tanggal, jam_masuk, status, foto_absensi, confidence, latitude, longitude, lat_lon, alamat) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [id_user, today, time, statusKehadiran, foto_absensi, confidence, latitude, longitude, `${latitude},${longitude}`, alamat]
             );
@@ -220,7 +229,7 @@ app.post('/api/absen', async (req, res) => {
             
             // PERBAIKAN: Update juga alamat saat pulang (jika posisi berubah)
             await db.query(
-                `UPDATE ABSENSI SET jam_keluar = ?, foto_absensi = ?, confidence = ?, latitude = ?, longitude = ?, lat_lon = ?, alamat = ? 
+                `UPDATE `absensi` SET jam_keluar = ?, foto_absensi = ?, confidence = ?, latitude = ?, longitude = ?, lat_lon = ?, alamat = ? 
                  WHERE id_user = ? AND tanggal = ?`,
                 [time, foto_absensi, confidence, latitude, longitude, `${latitude},${longitude}`, alamat, id_user, today]
             );
@@ -238,7 +247,7 @@ app.get('/api/laporan', async (req, res) => {
             SELECT a.id_absensi as id, DATE_FORMAT(a.tanggal, '%d %b %Y') as tanggal, 
                    u.nama, a.jam_masuk, a.jam_keluar, a.status, 
                    a.latitude, a.longitude, a.alamat 
-            FROM ABSENSI a 
+            FROM `absensi` a 
             JOIN `user` u ON a.id_user = u.id_user 
             ORDER BY a.tanggal DESC, a.jam_masuk DESC
         `);
@@ -258,7 +267,7 @@ app.get('/api/riwayat/:id_user', async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT id_absensi as id, DATE_FORMAT(tanggal, '%d %b %Y') as tanggal, jam_masuk, jam_keluar, status, latitude, longitude 
-            FROM ABSENSI WHERE id_user = ? ORDER BY tanggal DESC, jam_masuk DESC
+            FROM `absensi` WHERE id_user = ? ORDER BY tanggal DESC, jam_masuk DESC
         `, [req.params.id_user]);
         res.json(rows);
     } catch (err) {
@@ -271,7 +280,7 @@ app.put('/api/laporan/:id', async (req, res) => {
     const { jam_masuk, jam_keluar, status } = req.body;
     try {
         await db.query(
-            'UPDATE ABSENSI SET jam_masuk=?, jam_keluar=?, status=? WHERE id_absensi=?', 
+            'UPDATE `absensi` SET jam_masuk=?, jam_keluar=?, status=? WHERE id_absensi=?', 
             [jam_masuk, jam_keluar || null, status, req.params.id]
         );
         res.json({ message: 'Laporan absensi diperbarui' });
@@ -283,7 +292,7 @@ app.put('/api/laporan/:id', async (req, res) => {
 // API Hapus Data Absensi (Admin)
 app.delete('/api/laporan/:id', async (req, res) => {
     try {
-        await db.query('DELETE FROM ABSENSI WHERE id_absensi=?', [req.params.id]);
+        await db.query('DELETE FROM `absensi` WHERE id_absensi=?', [req.params.id]);
         res.json({ message: 'Data absensi dihapus' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -294,7 +303,7 @@ app.delete('/api/laporan/:id', async (req, res) => {
 app.put('/api/laporan/update-alamat/:id', async (req, res) => {
     try {
         await db.query(
-            'UPDATE ABSENSI SET alamat = ? WHERE id_absensi = ?', 
+            'UPDATE `absensi` SET alamat = ? WHERE id_absensi = ?', 
             [req.body.alamat, req.params.id]
         );
         res.json({ message: 'Alamat permanen disimpan di database.' });
