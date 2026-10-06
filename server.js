@@ -191,63 +191,133 @@ app.put('/api/jadwal/:id', async (req, res) => {
 
 // ================= API ABSENSI (MASUK & PULANG) =================
 app.post('/api/absen', async (req, res) => {
-    // Tambahkan 'alamat' pada penerimaan data
-    const { id_user, latitude, longitude, foto_absensi, confidence, jenis_absen, alamat } = req.body;
-    
+
+    const {
+        id_user,
+        latitude,
+        longitude,
+        foto_absensi,
+        confidence,
+        jenis_absen,
+        alamat
+    } = req.body;
+
     if (jenis_absen !== 'masuk' && jenis_absen !== 'keluar') {
-        return res.status(400).json({ error: `Jenis absensi tidak valid.` });
+        return res.status(400).json({
+            error: 'Jenis absensi tidak valid.'
+        });
     }
 
     try {
+
         const now = new Date();
-        const today = now.toLocaleDateString('en-CA'); 
-        const time = now.toTimeString().split(' ')[0]; 
-        
-        const [cek] = await db.query('SELECT * FROM `absensi` WHERE id_user = ? AND tanggal = ?', [id_user, today]);
+
+        const today = now.toLocaleDateString('en-CA');
+
+        const time = now.toTimeString().split(' ')[0];
+
+        // Cek absensi user hari ini
+        const [cek] = await db.query(
+            'SELECT * FROM absensi WHERE id_user = ? AND tanggal = ?',
+            [id_user, today]
+        );
+
+        // ================= ABSEN MASUK =================
 
         if (jenis_absen === 'masuk') {
-            if (cek.length > 0) return res.status(400).json({ error: 'Anda sudah absen masuk hari ini.' });
-            
-            const [jadwalDb] = await db.query('SELECT * FROM JADWAL LIMIT 1');
-            let statusKehadiran = 'Hadir'; 
-            if (jadwalDb.length > 0) {
-                const batasTelat = jadwalDb[0].batas; 
-                if (time > batasTelat) statusKehadiran = 'Terlambat'; 
+
+            if (cek.length > 0) {
+                return res.status(400).json({
+                    error: 'Anda sudah absen masuk hari ini.'
+                });
             }
 
-            // PERBAIKAN: Masukkan variabel alamat ke database
+            // Ambil jadwal
+            const [jadwalDb] = await db.query(
+                'SELECT * FROM jadwal LIMIT 1'
+            );
+
+            let statusKehadiran = 'Hadir';
+
+            if (jadwalDb.length > 0) {
+
+                const batasTelat = jadwalDb[0].batas;
+
+                if (time > batasTelat) {
+                    statusKehadiran = 'Terlambat';
+                }
+            }
+
+            // Simpan absensi masuk
             await db.query(
                 'INSERT INTO absensi (id_user, tanggal, jam_masuk, status, foto_absensi, confidence, latitude, longitude, lat_lon, alamat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     id_user,
                     today,
-                    jam_masuk,
-                    status,
+                    time,
+                    statusKehadiran,
                     foto_absensi,
                     confidence,
                     latitude,
                     longitude,
-                    lat_lon,
+                    `${latitude},${longitude}`,
                     alamat
                 ]
             );
-            res.json({ message: `Absen MASUK direkam! Status: ${statusKehadiran}` });
 
-        } else if (jenis_absen === 'keluar') {
-            if (cek.length === 0) return res.status(400).json({ error: 'Anda belum absen masuk hari ini.' });
-            if (cek[0].jam_keluar !== null) return res.status(400).json({ error: 'Anda sudah absen pulang hari ini.' });
-            
-            // PERBAIKAN: Update juga alamat saat pulang (jika posisi berubah)
-            await db.query(
-                `UPDATE `absensi` SET jam_keluar = ?, foto_absensi = ?, confidence = ?, latitude = ?, longitude = ?, lat_lon = ?, alamat = ? 
-                 WHERE id_user = ? AND tanggal = ?`,
-                [time, foto_absensi, confidence, latitude, longitude, `${latitude},${longitude}`, alamat, id_user, today]
-            );
-            res.json({ message: 'Absen PULANG direkam!' });
+            return res.json({
+                message: `Absen MASUK direkam! Status: ${statusKehadiran}`
+            });
         }
+
+        // ================= ABSEN PULANG =================
+
+        if (jenis_absen === 'keluar') {
+
+            if (cek.length === 0) {
+                return res.status(400).json({
+                    error: 'Anda belum absen masuk hari ini.'
+                });
+            }
+
+            if (cek[0].jam_keluar !== null) {
+                return res.status(400).json({
+                    error: 'Anda sudah absen pulang hari ini.'
+                });
+            }
+
+            // Update absensi pulang
+            await db.query(
+                'UPDATE absensi SET jam_keluar = ?, foto_absensi = ?, confidence = ?, latitude = ?, longitude = ?, lat_lon = ?, alamat = ? WHERE id_user = ? AND tanggal = ?',
+                [
+                    time,
+                    foto_absensi,
+                    confidence,
+                    latitude,
+                    longitude,
+                    `${latitude},${longitude}`,
+                    alamat,
+                    id_user,
+                    today
+                ]
+            );
+
+            return res.json({
+                message: 'Absen PULANG direkam!'
+            });
+        }
+
     } catch (err) {
-        res.status(500).json({ error: err.message });
+
+        console.error('ERROR POST /api/absen:', err);
+
+        res.status(500).json({
+            error: err.message,
+            code: err.code,
+            sqlMessage: err.sqlMessage
+        });
     }
+
 });
 
 // ================= API RIWAYAT & LAPORAN =================
