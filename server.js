@@ -217,9 +217,19 @@ app.post('/api/absen', async (req, res) => {
 
             // PERBAIKAN: Masukkan variabel alamat ke database
             await db.query(
-                `INSERT INTO absensi (id_user, tanggal, jam_masuk, status, foto_absensi, confidence, latitude, longitude, lat_lon, alamat) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [id_user, today, time, statusKehadiran, foto_absensi, confidence, latitude, longitude, `${latitude},${longitude}`, alamat]
+                'INSERT INTO absensi (id_user, tanggal, jam_masuk, status, foto_absensi, confidence, latitude, longitude, lat_lon, alamat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    id_user,
+                    today,
+                    jam_masuk,
+                    status,
+                    foto_absensi,
+                    confidence,
+                    latitude,
+                    longitude,
+                    lat_lon,
+                    alamat
+                ]
             );
             res.json({ message: `Absen MASUK direkam! Status: ${statusKehadiran}` });
 
