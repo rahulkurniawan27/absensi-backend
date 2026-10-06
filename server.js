@@ -13,6 +13,9 @@ const db = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'defaultdb',
     port: process.env.DB_PORT || 11733
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
 // 1. API Login
