@@ -362,10 +362,7 @@ app.get('/api/jadwal', async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            'ERROR GET /api/jadwal:',
-            err
-        );
+        console.error('ERROR GET /api/jadwal:', err);
 
         res.status(500).json({
             error: err.message
