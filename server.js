@@ -53,9 +53,19 @@ app.post('/api/login', async (req, res) => {
 
     try {
 
-        const [rows] = await db.query(
-            'SELECT * FROM user WHERE username = ?',
-            [username]
+        const [rows] = await db.query(`
+                SELECT 
+                    u.id_user,
+                    u.nama,
+                    u.username,
+                    u.password,
+                    u.role,
+                    f.path_foto
+                FROM user u
+                LEFT JOIN sample_foto f ON u.id_user = f.id_user
+                WHERE u.username = ?
+                LIMIT 1
+            `, [username]
         );
 
         if (rows.length === 0) {
@@ -79,7 +89,8 @@ app.post('/api/login', async (req, res) => {
             id_user: user.id_user,
             nama: user.nama,
             username: user.username,
-            role: user.role
+            role: user.role,
+            foto: user.path_foto || null
         };
 
         res.json({
