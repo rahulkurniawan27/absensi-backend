@@ -352,23 +352,23 @@ app.get('/api/face-descriptor/:id_user', async (req, res) => {
 // =====================================================
 
 app.get('/api/jadwal', async (req, res) => {
-
     try {
 
         const [rows] = await db.query(
-            'SELECT * FROM jadwal LIMIT 1'
+            'SELECT * FROM jadwal ORDER BY id ASC'
         );
 
-        res.json(rows[0] || {});
+        res.json(rows);
 
     } catch (err) {
 
-        console.error('ERROR GET /api/jadwal:', err);
+        console.error(
+            'ERROR GET /api/jadwal:',
+            err
+        );
 
         res.status(500).json({
-            error: err.message,
-            code: err.code,
-            sqlMessage: err.sqlMessage
+            error: err.message
         });
     }
 });
@@ -403,6 +403,56 @@ app.put('/api/jadwal/:id', async (req, res) => {
     } catch (err) {
 
         console.error('ERROR PUT /api/jadwal:', err);
+
+        res.status(500).json({
+            error: err.message
+        });
+    }
+});
+
+// ================= TAMBAH JADWAL =================
+
+app.post('/api/jadwal', async (req, res) => {
+    const { hari, masuk, batas, pulang } = req.body;
+
+    try {
+        const [result] = await db.query(
+            `INSERT INTO jadwal (hari, masuk, batas, pulang)
+             VALUES (?, ?, ?, ?)`,
+            [hari, masuk, batas, pulang]
+        );
+
+        res.json({
+            message: 'Jadwal berhasil ditambahkan',
+            id: result.insertId
+        });
+
+    } catch (err) {
+        console.error('ERROR POST /api/jadwal:', err);
+
+        res.status(500).json({
+            error: err.message
+        });
+    }
+});
+
+
+// ================= HAPUS JADWAL =================
+
+app.delete('/api/jadwal/:id', async (req, res) => {
+
+    try {
+        await db.query(
+            'DELETE FROM jadwal WHERE id = ?',
+            [req.params.id]
+        );
+
+        res.json({
+            message: 'Jadwal berhasil dihapus'
+        });
+
+    } catch (err) {
+        console.error('ERROR DELETE /api/jadwal:', err);
 
         res.status(500).json({
             error: err.message
