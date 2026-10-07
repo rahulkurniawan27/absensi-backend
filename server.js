@@ -541,25 +541,54 @@ app.post('/api/absen', async (req, res) => {
 
         if (jenis_absen === 'keluar') {
 
+            // Cek apakah sudah absen masuk
             if (cek.length === 0) {
-
                 return res.status(400).json({
                     error: 'Anda belum absen masuk hari ini.'
                 });
             }
 
-
+            // Cek apakah sudah absen pulang
             if (cek[0].jam_keluar !== null) {
-
                 return res.status(400).json({
                     error: 'Anda sudah absen pulang hari ini.'
                 });
             }
 
+            // =============================================
+            // CEK WAKTU PULANG
+            // =============================================
+
+            const [jadwalDb] = await db.query(
+                'SELECT * FROM jadwal LIMIT 1'
+            );
+
+            if (jadwalDb.length === 0) {
+                return res.status(500).json({
+                    error: 'Jadwal kerja belum tersedia.'
+                });
+            }
+
+            const jadwalPulang = jadwalDb[0].pulang;
+
+            // Ambil format HH:mm:ss dari database
+            const batasPulang = String(jadwalPulang).substring(0, 8);
+
+            // Bandingkan waktu sekarang dengan jadwal pulang
+            if (time < batasPulang) {
+
+                return res.status(400).json({
+                    error: `Belum waktunya absen pulang. Absen pulang dimulai pukul ${batasPulang.substring(0, 5)} WIB.`
+                });
+            }
+
+            // =============================================
+            // SIMPAN ABSEN PULANG
+            // =============================================
 
             await db.query(
                 `UPDATE absensi
-                 SET
+                SET
                     jam_keluar = ?,
                     foto_absensi = ?,
                     confidence = ?,
@@ -567,8 +596,8 @@ app.post('/api/absen', async (req, res) => {
                     longitude = ?,
                     lat_lon = ?,
                     alamat = ?
-                 WHERE id_user = ?
-                 AND tanggal = ?`,
+                WHERE id_user = ?
+                AND tanggal = ?`,
                 [
                     time,
                     foto_absensi,
@@ -582,9 +611,8 @@ app.post('/api/absen', async (req, res) => {
                 ]
             );
 
-
             return res.json({
-                message: 'Absen PULANG direkam!'
+                message: 'Absen PULANG berhasil direkam!'
             });
         }
 
