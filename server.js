@@ -492,9 +492,21 @@ app.post('/api/absen', async (req, res) => {
             if (jadwalDb.length > 0) {
 
                 const batasTelat = jadwalDb[0].batas;
+                const jamPulang = jadwalDb[0].pulang;
 
-                if (time > batasTelat) {
+                // Jika absen pada atau setelah jam pulang
+                if (time >= jamPulang) {
+
+                    statusKehadiran = 'Tidak Hadir';
+
+                } else if (time > batasTelat) {
+
+                    // Jika lewat batas masuk tetapi belum jam pulang
                     statusKehadiran = 'Terlambat';
+
+                } else {
+
+                    statusKehadiran = 'Hadir';
                 }
             }
 
